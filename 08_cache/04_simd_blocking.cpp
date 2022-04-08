@@ -85,5 +85,5 @@ int main(int argc, char **argv) {
   for (int i=0; i<N; i++)
     for (int j=0; j<N; j++)
       err += fabs(C[i][j]);
-  printf("error: %lf\n",err/N/N);
+  //printf("error: %lf\n",err/N/N);
 }
