@@ -7,18 +7,18 @@
 03_blocking: 03_blocking.cpp
 	g++ 03_blocking.cpp -O3 -fopenmp
 04_simd_blocking: 04_simd_blocking.cpp
-	g++ 04_simd_blocking.cpp -O3 -fopenmp
+	g++ 04_simd_blocking.cpp -O3 -fopenmp -march=native
 05_sgemm: 05_sgemm.cpp
 	g++ 05_sgemm.cpp -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5
 06_base: 06_base.cu
-	nvcc 06_base.cu -arch=sm_60 -O3 -Xcompiler "-O3 -fopenmp"
+	nvcc 06_base.cu -Xcompiler "-O3 -fopenmp"
 07_block: 07_block.cu
-	nvcc 07_block.cu -arch=sm_60 -O3 -Xcompiler "-O3 -fopenmp"
+	nvcc 07_block.cu -Xcompiler "-O3 -fopenmp"
 08_grid: 08_grid.cu
-	nvcc 08_grid.cu -arch=sm_60 -O3 -Xcompiler "-O3 -fopenmp"
+	nvcc 08_grid.cu -Xcompiler "-O3 -fopenmp"
 09_shared: 09_shared.cu
-	nvcc 09_shared.cu -arch=sm_60 -O3 -Xcompiler "-O3 -fopenmp"
+	nvcc 09_shared.cu -Xcompiler "-O3 -fopenmp"
 10_sgemm: 10_sgemm.cu
-	nvcc 10_sgemm.cu -O3 -Xcompiler "-O3 -fopenmp" -lcublas
+	nvcc 10_sgemm.cu -Xcompiler "-O3 -fopenmp" -lcublas
 11_cutlass: 11_cutlass.cu
-	nvcc 11_cutlass.cu -arch=sm_60 -O3 -Xcompiler "-O3 -fopenmp"
+	nvcc 11_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
