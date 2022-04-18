@@ -1,4 +1,4 @@
-# hpc_lecture
+# hpc_lecture Student ID: 20M28152
 
 |          | Topic                                | Sample code               |
 | -------- | ------------------------------------ | ------------------------- |
