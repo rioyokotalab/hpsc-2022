@@ -1,10 +1,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <omp.h>
 
 int main() {
   int n = 50;
   int range = 5;
+  int j = 0;
+  int loop = 0;
   std::vector<int> key(n);
   for (int i=0; i<n; i++) {
     key[i] = rand() % range;
@@ -18,10 +21,11 @@ int main() {
   std::vector<int> offset(range,0);
   for (int i=1; i<range; i++) 
     offset[i] = offset[i-1] + bucket[i-1];
-  for (int i=0; i<range; i++) {
-    int j = offset[i];
-    for (; bucket[i]>0; bucket[i]--) {
-      key[j++] = i;
+#pragma omp parallel for private(loop) private(j)
+  for (loop = 0; loop < range; loop++) {
+    j = offset[loop];
+    for (int k = bucket[loop]; k > 0; k--) {
+      key[j++] = loop;
     }
   }
 
