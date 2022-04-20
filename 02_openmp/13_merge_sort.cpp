@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <omp.h>
 
 void merge(std::vector<int>& vec, int begin, int mid, int end) {
   std::vector<int> tmp(end-begin+1);
