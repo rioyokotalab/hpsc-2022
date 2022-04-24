@@ -1,15 +1,20 @@
 00_loop: 00_loop.cpp
-	pgc++ 00_loop.cpp -acc —Minfo=accel
+	nvc++ 00_loop.cpp -acc -Minfo
 01_gang: 01_gang.cpp
-	pgc++ 01_gang.cpp -acc —Minfo=accel
+	nvc++ 01_gang.cpp -acc -Minfo
 02_parallel: 02_parallel.cpp
-	pgc++ 02_parallel.cpp -acc —Minfo=accel
+	nvc++ 02_parallel.cpp -acc -Minfo
 03_kernels: 03_kernels.cpp
-	pgc++ 03_kernels.cpp -acc —Minfo=accel
-04_iterator: 04_iterator.cpp
-	pgc++ 04_iterator.cpp -acc —Minfo=accel
-05_scope: 05_scope.cpp
-	pgc++ 05_scope.cpp -acc —Minfo=accel
-06_reduction: 06_reduction.cpp
-	pgc++ 06_reduction.cpp -acc —Minfo=accel
-
+	nvc++ 03_kernels.cpp -acc -Minfo
+04_array: 04_array.cpp
+	nvc++ 04_array.cpp -acc -Minfo
+05_vector: 05_vector.cpp
+	nvc++ 05_vector.cpp -acc -gpu=managed -Minfo
+06_iterator: 06_iterator.cpp
+	nvc++ 06_iterator.cpp -acc -gpu=managed -Minfo
+07_scope: 07_scope.cpp
+	nvc++ 07_scope.cpp -acc -Minfo
+08_reduction: 08_reduction.cpp
+	nvc++ 08_reduction.cpp -acc -Minfo
+09_matmult: 09_matmult.cpp
+	nvc++ 09_matmult.cpp -acc -gpu=managed -Minfo
