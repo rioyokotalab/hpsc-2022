@@ -16,11 +16,13 @@
 	nvcc 07_warp.cu
 08_scan: 08_scan.cu
 	nvcc 08_scan.cu
-09_cooperative: 09_cooperative.cu
-	nvcc 09_cooperative.cu -arch=sm_60 -rdc=true
-10_mpi: 10_mpi.cu
-	nvcc 10_mpi.cu -lmpi
-11_hip: 11_hip.cpp
-	hipcc 11_hip.cpp
-12_bucket_sort: 12_bucket_sort.cpp
-	g++ 12_bucket_sort.cpp
+09_stream: 09_stream.cu
+	nvcc 09_stream.cu --default-stream per-thread
+10_cooperative: 10_cooperative.cu
+	nvcc 10_cooperative.cu -arch=sm_60 -rdc=true
+11_mpi: 11_mpi.cu
+	nvcc 11_mpi.cu -lmpi
+12_hip: 12_hip.cpp
+	hipcc 12_hip.cpp
+13_bucket_sort: 13_bucket_sort.cpp
+	g++ 13_bucket_sort.cpp
