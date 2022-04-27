@@ -22,7 +22,6 @@ int main() {
   float *A = new float [N*N];
   float *B = new float [N*N];
   float *C = new float [N*N];
-  matmult(A,B,C,N);
   for (int i=0; i<N; i++) {
     for (int j=0; j<N; j++) {
       A[N*i+j] = drand48();
@@ -30,6 +29,7 @@ int main() {
       C[N*i+j] = 0;
     }
   }
+  matmult(A,B,C,N);
   auto tic = chrono::steady_clock::now();
   matmult(A,B,C,N);
   auto toc = chrono::steady_clock::now();
