@@ -10,6 +10,7 @@ __global__ void reduction(int &sum) {
 int main(void) {
   const int N = 128;
   const int M = 64;
+  sum = 0;
   reduction<<<N/M,M>>>(sum);
   cudaDeviceSynchronize();
   printf("%d\n",sum);

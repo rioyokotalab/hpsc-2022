@@ -66,13 +66,11 @@ int main() {
 	gemm(A[M*m+l], N, A[M*l+n], N, A[M*m+n]);
   }
   for (int m=0; m<M; m++) {
-#pragma omp parallel for
     for (int n=0; n<m; n++)
       gemm(A[M*m+n], N, b[n], 1, b[m]);
     trsm(left, lower, A[M*m+m], N, b[m], 1);
   }
   for (int m=M-1; m>=0; m--) {
-#pragma omp parallel for
     for (int n=M-1; n>m; n--)
       gemm(A[M*m+n], N, b[n], 1, b[m]);
     trsm(left, upper, A[M*m+m], N, b[m], 1);
