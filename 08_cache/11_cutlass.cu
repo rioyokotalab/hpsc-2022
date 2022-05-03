@@ -12,8 +12,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   const int VectorsPerThread = 2;
   const int ItemsPerThread = VectorsPerThread * ItemsPerVector; // 8
 
-  const int ThreadsPerWarpY = 4;
   const int ThreadsPerWarpX = 8;
+  const int ThreadsPerWarpY = 4;
   const int ThreadsPerWarp = ThreadsPerWarpX * ThreadsPerWarpY; // 32
   const int WarpsPerBlockX = 1;
   const int ThreadsPerBlock = 64;
@@ -62,12 +62,12 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int lane_y = lane_id % ThreadsPerWarpY; // 4
   int offset_y = lane_y * ItemsPerVector + warp_y * ItemsPerWarpY;
   int offset_x = lane_x * ItemsPerVector + warp_x * ItemsPerWarpX;
-  int stride_a = 0;
-  int stride_b = 0;
+  int offset_a_k = 0;
+  int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += Ktile) {
     for (int i = 0; i < VectorsPerThread; ++i) {
-      thread_a[i] = tile_a[stride_a + i * ThreadsPerKtile * lda];
-      thread_b[i] = tile_b[stride_b + i * ThreadsPerNtile * ldb];
+      thread_a[i] = tile_a[offset_a_k + i * ThreadsPerKtile * lda];
+      thread_b[i] = tile_b[offset_b_k + i * ThreadsPerNtile * ldb];
     }
     __syncthreads();
     for (int i = 0; i < VectorsPerThread; ++i) {
@@ -77,8 +77,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
     }
     __syncthreads();
-    stride_a += lda * Ktile;
-    stride_b += Ktile / ItemsPerVector;
+    offset_a_k += lda * Ktile;
+    offset_b_k += Ktile / ItemsPerVector;
 #pragma unroll
     for (int k = 0; k < Ktile; k++) {
       for (int i = 0; i < VectorsPerThread; ++i) {
