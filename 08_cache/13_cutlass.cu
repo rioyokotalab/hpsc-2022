@@ -51,8 +51,9 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_a_k = 0;
   int offset_b_k = 0;
   float __align__(16) *tile_a = d_a + offset_a_m + a_m + a_k * lda * ItemsPerThread;
+  float __align__(16) *tile_bb = d_b;
   for (int kk = 0; kk < dim_k; kk += Ktile) {
-    float __align__(16) *tile_b = d_b + offset_b_k + (offset_b_n + b_n) * ldb * ItemsPerThread;
+    float __align__(16) *tile_b = tile_bb + offset_b_k + b_k + (offset_b_n + b_n) * ldb * ItemsPerThread;
     __syncthreads();
     for (int j = 0; j < ItemsPerThread; ++j) {
       block_a[a_k][a_m + j] = tile_a[j];
