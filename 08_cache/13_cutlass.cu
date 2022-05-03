@@ -20,16 +20,15 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 
   const int Ktile = 8;
   const int VectorsPerMtile = ThreadsPerWarpX; // 16 A #rows
-  const int VectorsPerKtile = Ktile / ItemsPerThread; // 2 B #rows
 
-  int offset_a_m = ItemsPerBlockX * blockIdx.x / ItemsPerThread;
+  int offset_a_m = ItemsPerBlockX * blockIdx.x;
   int offset_b_n = ItemsPerBlockX * blockIdx.y;
   int lda = dim_m / ItemsPerThread;
   int ldb = dim_k / ItemsPerThread;
-  int a_m = threadIdx.x % VectorsPerMtile; // 16
+  int a_m = threadIdx.x % VectorsPerMtile * ItemsPerThread; // 16
   int a_k = threadIdx.x / VectorsPerMtile; // 4
-  int b_k = threadIdx.x % VectorsPerKtile; // 2
-  int b_n = threadIdx.x / VectorsPerKtile; // 32
+  int b_k = 0;
+  int b_n = threadIdx.x;
 
   __shared__ float __align__(16) block_a[Ktile][ItemsPerBlockX];
   __shared__ float __align__(16) block_b[Ktile][ItemsPerBlockX];
@@ -51,17 +50,18 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_y = warp_y * ItemsPerWarpY; // 32 x 2
   int offset_a_k = 0;
   int offset_b_k = 0;
+  float __align__(16) *tile_a = d_a + offset_a_m + a_m + a_k * lda * ItemsPerThread;
   for (int kk = 0; kk < dim_k; kk += Ktile) {
-    float __align__(16) *tile_a = d_a + (offset_a_m + a_m + (offset_a_k + a_k) * lda) * ItemsPerThread;
-    float __align__(16) *tile_b = d_b + (offset_b_k + b_k + (offset_b_n + b_n) * ldb) * ItemsPerThread;
+    float __align__(16) *tile_b = d_b + offset_b_k + (offset_b_n + b_n) * ldb * ItemsPerThread;
     __syncthreads();
     for (int j = 0; j < ItemsPerThread; ++j) {
-      block_a[a_k][a_m * ItemsPerThread + j] = tile_a[j];
-      block_b[b_k * ItemsPerThread + j][b_n] = tile_b[j];
+      block_a[a_k][a_m + j] = tile_a[j];
+      block_b[b_k + j][b_n] = tile_b[j];
     }
     __syncthreads();
+    tile_a += Ktile * lda * ItemsPerThread;
     offset_a_k += Ktile;
-    offset_b_k += Ktile / ItemsPerThread;
+    offset_b_k += ItemsPerThread;
 #pragma unroll
     for (int k = 0; k < Ktile; k++) {
       for (int j = 0; j < ItemsPerThread; ++j) {

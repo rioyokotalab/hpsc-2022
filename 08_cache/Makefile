@@ -22,7 +22,7 @@
 	nvcc 10_sgemm.cu -Xcompiler "-O3 -fopenmp" -lcublas
 11_cutlass: 11_cutlass.cu
 	nvcc 11_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
-12_cutlass: 12_cutlass.cu
-	nvcc 12_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
+12_vector: 12_vector.cu
+	nvcc 12_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
 13_cutlass: 13_cutlass.cu
 	nvcc 13_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
