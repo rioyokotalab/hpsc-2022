@@ -20,9 +20,11 @@
 	nvcc 09_shared.cu -Xcompiler "-O3 -fopenmp"
 10_sgemm: 10_sgemm.cu
 	nvcc 10_sgemm.cu -Xcompiler "-O3 -fopenmp" -lcublas
-11_cutlass: 11_cutlass.cu
-	nvcc 11_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
-12_vector: 12_vector.cu
-	nvcc 12_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
-13_cutlass: 13_cutlass.cu
-	nvcc 13_cutlass.cu -Xcompiler "-O3 -fopenmp" -lcublas
+11_tile_offset: 11_tile_offset.cu
+	nvcc 11_tile_offset.cu -Xcompiler "-O3 -fopenmp" -lcublas
+12_vector_4x2: 12_vector_4x2.cu
+	nvcc 12_vector_4x2.cu -Xcompiler "-O3 -fopenmp" -lcublas
+13_vector: 13_vector.cu
+	nvcc 13_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
+14_warp: 14_warp.cu
+	nvcc 14_warp.cu -Xcompiler "-O3 -fopenmp" -lcublas
