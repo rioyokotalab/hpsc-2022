@@ -80,18 +80,14 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
     }
   }
-  for (int ix = 0; ix < ItemsPerThread; ++ix) {
-    for (int iy = 0; iy < ItemsPerThread; iy += ItemsPerThread) {
-      int vx = ix / ItemsPerThread;
-      int vy = iy / ItemsPerThread;
-      int tx = offset_x + (lane_x + vx * ThreadsPerWarpX) * ItemsPerThread + (ix % ItemsPerThread);
-      int ty = offset_y + (lane_y + vy * ThreadsPerWarpY) * ItemsPerThread + (iy % ItemsPerThread);
-      int bx = ItemsPerBlockX * blockIdx.y + tx;
-      int by = ItemsPerBlockX * blockIdx.x + ty;
-      for (int i = 0; i < ItemsPerThread; ++i) {
-	if (bx < dim_n && (by + i) < dim_m) {
-	  d_c[bx * dim_m + by + i] = fragment_c[iy + i][ix];
-	}
+  for (int j = 0; j < ItemsPerThread; ++j) {
+    int tx = offset_x + lane_x * ItemsPerThread + j;
+    int ty = offset_y + lane_y * ItemsPerThread;
+    int bx = ItemsPerBlockX * blockIdx.y + tx;
+    int by = ItemsPerBlockX * blockIdx.x + ty;
+    for (int i = 0; i < ItemsPerThread; ++i) {
+      if (bx < dim_n && (by + i) < dim_m) {
+	d_c[bx * dim_m + by + i] = fragment_c[i][j];
       }
     }
   }
