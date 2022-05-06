@@ -28,7 +28,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   float __align__(16) fragment_b[8];
   float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * lda) * 8]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[((offset_a_m + a_m) * 8 + a_k * dim_m)]);
   tile_b = reinterpret_cast<vec_t*>(&d_b[(b_k + (offset_b_n + b_n) * ldb) * 8]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
