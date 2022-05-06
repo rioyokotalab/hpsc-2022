@@ -64,13 +64,11 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     }
   }
   for (int j = 0; j < 8; ++j) {
-    int tx = offset_x + j;
-    int ty = offset_y;
-    int bx = offset_b_n + tx;
-    int by = offset_a_m + ty;
+    int c_n = offset_b_n + offset_x + j;
+    int c_m = offset_a_m + offset_y;
     for (int i = 0; i < 8; ++i) {
-      if (bx < dim_n && (by + i) < dim_m) {
-	d_c[bx * dim_m + by + i] = fragment_c[i][j];
+      if (c_n < dim_n && (c_m + i) < dim_m) {
+	d_c[c_n * dim_m + c_m + i] = fragment_c[i][j];
       }
     }
   }
