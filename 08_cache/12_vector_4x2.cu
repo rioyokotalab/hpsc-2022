@@ -10,32 +10,29 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
   const int ItemsPerVector = 4;
   const int VectorsPerThread = 2;
-  const int ItemsPerThread = VectorsPerThread * ItemsPerVector; // 8
+  const int ItemsPerThread = 8;
 
   const int ThreadsPerWarpX = 8;
   const int ThreadsPerWarpY = 4;
-  const int ThreadsPerWarp = ThreadsPerWarpX * ThreadsPerWarpY; // 32
+  const int ThreadsPerWarp = 32;
   const int WarpsPerBlockX = 1;
-  const int ThreadsPerBlock = 64;
 
-  const int ItemsPerWarpY = ThreadsPerWarpY * ItemsPerThread; // 32
-  const int ItemsPerWarpX = ThreadsPerWarpX * ItemsPerThread; // 64
-  const int ItemsPerBlockX = WarpsPerBlockX * ItemsPerWarpX; // 64
+  const int ItemsPerWarpY = 32;
+  const int ItemsPerWarpX = 64;
+  const int ItemsPerBlockX = 64;
 
   const int Ktile = 8;
-  const int VectorsPerMtile = ThreadsPerWarpX * VectorsPerThread; // 16 A #rows
-  const int ThreadsPerKtile = ThreadsPerBlock / VectorsPerMtile; // 4 A #cols
-  const int VectorsPerKtile = Ktile / ItemsPerVector; // 2 B #rows
-  const int ThreadsPerNtile = ThreadsPerBlock / VectorsPerKtile; // 32 B #cols
+  const int ThreadsPerKtile = 4;
+  const int ThreadsPerNtile = 32;
 
-  int offset_a_m = ItemsPerBlockX * blockIdx.x / ItemsPerVector;
-  int offset_b_n = ItemsPerBlockX * blockIdx.y;
-  int lda = dim_m / ItemsPerVector;
-  int ldb = dim_k / ItemsPerVector;
-  int a_m = threadIdx.x % VectorsPerMtile; // 16
-  int a_k = threadIdx.x / VectorsPerMtile; // 4
-  int b_k = threadIdx.x % VectorsPerKtile; // 2
-  int b_n = threadIdx.x / VectorsPerKtile; // 32
+  int offset_a_m = 64 * blockIdx.x / 4;
+  int offset_b_n = 64 * blockIdx.y;
+  int lda = dim_m / 4;
+  int ldb = dim_k / 4;
+  int a_m = threadIdx.x % 16;
+  int a_k = threadIdx.x / 16;
+  int b_k = threadIdx.x % 2;
+  int b_n = threadIdx.x / 2;
 
   struct __align__(16) vec_t { float d[ItemsPerVector]; };
   vec_t *tile_a;
