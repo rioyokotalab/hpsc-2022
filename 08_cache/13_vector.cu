@@ -8,31 +8,30 @@ using namespace std;
 
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
-  const int ItemsPerThread = 8;
-  int offset_a_m = 64 * blockIdx.x / ItemsPerThread;
+  int offset_a_m = 64 * blockIdx.x / 8;
   int offset_b_n = 64 * blockIdx.y;
-  int lda = dim_m / ItemsPerThread;
-  int ldb = dim_k / ItemsPerThread;
+  int lda = dim_m / 8;
+  int ldb = dim_k / 8;
   int a_m = threadIdx.x % 8; // 8
   int a_k = threadIdx.x / 8; // 8
   int b_k = 0;
   int b_n = threadIdx.x;
 
-  struct __align__(16) vec_t { float d[ItemsPerThread]; };
+  struct __align__(16) vec_t { float d[8]; };
   vec_t *tile_a;
   vec_t *tile_b;
   vec_t __align__(16) thread_a;
   vec_t __align__(16) thread_b;
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
-  float __align__(16) fragment_a[ItemsPerThread];
-  float __align__(16) fragment_b[ItemsPerThread];
-  float __align__(16) fragment_c[ItemsPerThread][ItemsPerThread];
+  float __align__(16) fragment_a[8];
+  float __align__(16) fragment_b[8];
+  float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * lda) * ItemsPerThread]);
-  tile_b = reinterpret_cast<vec_t*>(&d_b[(b_k + (offset_b_n + b_n) * ldb) * ItemsPerThread]);
-  for (int m = 0; m < ItemsPerThread; ++m)
-    for (int n = 0; n < ItemsPerThread; ++n)
+  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * lda) * 8]);
+  tile_b = reinterpret_cast<vec_t*>(&d_b[(b_k + (offset_b_n + b_n) * ldb) * 8]);
+  for (int m = 0; m < 8; ++m)
+    for (int n = 0; n < 8; ++n)
       fragment_c[m][n] = 0;
 
   int warp_id = threadIdx.x / 32; // 2
@@ -49,32 +48,32 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     thread_a = tile_a[offset_a_k];
     thread_b = tile_b[offset_b_k];
     __syncthreads();
-    for (int j = 0; j < ItemsPerThread; ++j) {
-      block_a[a_k][a_m * ItemsPerThread + j] = thread_a.d[j];
-      block_b[b_k * ItemsPerThread + j][b_n] = thread_b.d[j];
+    for (int j = 0; j < 8; ++j) {
+      block_a[a_k][a_m * 8 + j] = thread_a.d[j];
+      block_b[b_k * 8 + j][b_n] = thread_b.d[j];
     }
     __syncthreads();
     offset_a_k += 8 * lda;
-    offset_b_k += 8 / ItemsPerThread;
+    offset_b_k += 8 / 8;
 #pragma unroll
     for (int k = 0; k < 8; k++) {
-      for (int j = 0; j < ItemsPerThread; ++j) {
-	fragment_a[j] = block_a[k][offset_y + lane_y * ItemsPerThread + j];
-	fragment_b[j] = block_b[k][offset_x + lane_x * ItemsPerThread + j];
+      for (int j = 0; j < 8; ++j) {
+	fragment_a[j] = block_a[k][offset_y + lane_y * 8 + j];
+	fragment_b[j] = block_b[k][offset_x + lane_x * 8 + j];
       }
-      for (int m = 0; m < ItemsPerThread; ++m) {
-	for (int n = 0; n < ItemsPerThread; ++n) {
+      for (int m = 0; m < 8; ++m) {
+	for (int n = 0; n < 8; ++n) {
 	  fragment_c[m][n] += fragment_a[m] * fragment_b[n];
 	}
       }
     }
   }
-  for (int j = 0; j < ItemsPerThread; ++j) {
-    int tx = offset_x + lane_x * ItemsPerThread + j;
-    int ty = offset_y + lane_y * ItemsPerThread;
+  for (int j = 0; j < 8; ++j) {
+    int tx = offset_x + lane_x * 8 + j;
+    int ty = offset_y + lane_y * 8;
     int bx = 64 * blockIdx.y + tx;
     int by = 64 * blockIdx.x + ty;
-    for (int i = 0; i < ItemsPerThread; ++i) {
+    for (int i = 0; i < 8; ++i) {
       if (bx < dim_n && (by + i) < dim_m) {
 	d_c[bx * dim_m + by + i] = fragment_c[i][j];
       }
