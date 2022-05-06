@@ -8,10 +8,9 @@ using namespace std;
 
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
-  int offset_a_m = 64 * blockIdx.x / 8;
+  int offset_a_m = 64 * blockIdx.x;
   int offset_b_n = 64 * blockIdx.y;
-  int ldb = dim_k / 8;
-  int a_m = threadIdx.x % 8;
+  int a_m = threadIdx.x % 8 * 8;
   int a_k = threadIdx.x / 8;
   int b_n = threadIdx.x;
 
@@ -26,8 +25,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   float __align__(16) fragment_b[8];
   float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[((offset_a_m + a_m) * 8 + a_k * dim_m)]);
-  tile_b = reinterpret_cast<vec_t*>(&d_b[(offset_b_n + b_n) * ldb * 8]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * dim_m)]);
+  tile_b = reinterpret_cast<vec_t*>(&d_b[(offset_b_n + b_n) * dim_k]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
       fragment_c[m][n] = 0;
@@ -47,7 +46,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     thread_b = tile_b[offset_b_k];
     __syncthreads();
     for (int j = 0; j < 8; ++j) {
-      block_a[a_k][a_m * 8 + j] = thread_a.d[j];
+      block_a[a_k][a_m + j] = thread_a.d[j];
       block_b[j][b_n] = thread_b.d[j];
     }
     __syncthreads();
