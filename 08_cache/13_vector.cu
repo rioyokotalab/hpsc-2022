@@ -32,13 +32,11 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       fragment_c[m][n] = 0;
 
   int warp_id = threadIdx.x / 32;
-  int warp_x = 0;
-  int warp_y = warp_id;
   int lane_id = threadIdx.x % 32;
   int lane_x = lane_id / 4;
   int lane_y = lane_id % 4;
-  int offset_x = warp_x * 64 + lane_x * 8;
-  int offset_y = warp_y * 32 + lane_y * 8;
+  int offset_x = lane_x * 8;
+  int offset_y = warp_id * 32 + lane_y * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += 8) {
@@ -68,8 +66,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   for (int j = 0; j < 8; ++j) {
     int tx = offset_x + j;
     int ty = offset_y;
-    int bx = 64 * blockIdx.y + tx;
-    int by = 64 * blockIdx.x + ty;
+    int bx = offset_b_n + tx;
+    int by = offset_a_m + ty;
     for (int i = 0; i < 8; ++i) {
       if (bx < dim_n && (by + i) < dim_m) {
 	d_c[bx * dim_m + by + i] = fragment_c[i][j];
