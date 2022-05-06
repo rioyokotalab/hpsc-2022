@@ -9,16 +9,12 @@ using namespace std;
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
   const int ItemsPerThread = 8;
-  const int ThreadsPerWarpX = 8;
-  const int ThreadsPerWarpY = 4;
-  const int ThreadsPerWarp = ThreadsPerWarpX * ThreadsPerWarpY; // 32
-
   int offset_a_m = 64 * blockIdx.x / ItemsPerThread;
   int offset_b_n = 64 * blockIdx.y;
   int lda = dim_m / ItemsPerThread;
   int ldb = dim_k / ItemsPerThread;
-  int a_m = threadIdx.x % ThreadsPerWarpX; // 8
-  int a_k = threadIdx.x / ThreadsPerWarpX; // 8
+  int a_m = threadIdx.x % 8; // 8
+  int a_k = threadIdx.x / 8; // 8
   int b_k = 0;
   int b_n = threadIdx.x;
 
@@ -39,12 +35,12 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     for (int n = 0; n < ItemsPerThread; ++n)
       fragment_c[m][n] = 0;
 
-  int warp_id = threadIdx.x / ThreadsPerWarp; // 2
+  int warp_id = threadIdx.x / 32; // 2
   int warp_x = 0;
   int warp_y = warp_id;
-  int lane_id = threadIdx.x % ThreadsPerWarp; // 32
-  int lane_x = lane_id / ThreadsPerWarpY; // 8
-  int lane_y = lane_id % ThreadsPerWarpY; // 4
+  int lane_id = threadIdx.x % 32; // 32
+  int lane_x = lane_id / 4; // 8
+  int lane_y = lane_id % 4; // 4
   int offset_x = warp_x * 64; // 64
   int offset_y = warp_y * 32; // 32 x 2
   int offset_a_k = 0;
