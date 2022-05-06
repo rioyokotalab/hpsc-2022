@@ -15,8 +15,6 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int b_n = threadIdx.x;
 
   struct __align__(16) vec_t { float d[8]; };
-  vec_t __align__(16) thread_a;
-  vec_t __align__(16) thread_b;
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
   float __align__(16) fragment_a[8];
@@ -38,8 +36,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += 8) {
-    thread_a = tile_a[offset_a_k];
-    thread_b = tile_b[offset_b_k];
+    vec_t __align__(16) thread_a = tile_a[offset_a_k];
+    vec_t __align__(16) thread_b = tile_b[offset_b_k];
     __syncthreads();
     for (int j = 0; j < 8; ++j) {
       block_a[a_k][a_m + j] = thread_a.d[j];
