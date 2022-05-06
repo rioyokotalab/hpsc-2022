@@ -12,7 +12,6 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   const int ThreadsPerWarpX = 8;
   const int ThreadsPerWarpY = 4;
   const int ThreadsPerWarp = ThreadsPerWarpX * ThreadsPerWarpY; // 32
-  const int WarpsPerBlockX = 1;
 
   int offset_a_m = 64 * blockIdx.x / ItemsPerThread;
   int offset_b_n = 64 * blockIdx.y;
@@ -41,8 +40,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       fragment_c[m][n] = 0;
 
   int warp_id = threadIdx.x / ThreadsPerWarp; // 2
-  int warp_x = warp_id % WarpsPerBlockX; // 2
-  int warp_y = warp_id / WarpsPerBlockX; // 1
+  int warp_x = 0;
+  int warp_y = warp_id;
   int lane_id = threadIdx.x % ThreadsPerWarp; // 32
   int lane_x = lane_id / ThreadsPerWarpY; // 8
   int lane_y = lane_id % ThreadsPerWarpY; // 4
