@@ -8,40 +8,48 @@ using namespace std;
 
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
-  const int ItemsPerThread = 8;
+  const int ItemsPerVector = 4;
+  const int VectorsPerThread = 2;
+  const int ItemsPerThread = VectorsPerThread * ItemsPerVector; // 8
+
   const int ThreadsPerWarpX = 8;
   const int ThreadsPerWarpY = 4;
   const int ThreadsPerWarp = ThreadsPerWarpX * ThreadsPerWarpY; // 32
   const int WarpsPerBlockX = 1;
+  const int ThreadsPerBlock = 64;
 
   const int ItemsPerWarpY = ThreadsPerWarpY * ItemsPerThread; // 32
   const int ItemsPerWarpX = ThreadsPerWarpX * ItemsPerThread; // 64
   const int ItemsPerBlockX = WarpsPerBlockX * ItemsPerWarpX; // 64
 
   const int Ktile = 8;
+  const int VectorsPerMtile = ThreadsPerWarpX * VectorsPerThread; // 16 A #rows
+  const int ThreadsPerKtile = ThreadsPerBlock / VectorsPerMtile; // 4 A #cols
+  const int VectorsPerKtile = Ktile / ItemsPerVector; // 2 B #rows
+  const int ThreadsPerNtile = ThreadsPerBlock / VectorsPerKtile; // 32 B #cols
 
-  int offset_a_m = ItemsPerBlockX * blockIdx.x / ItemsPerThread;
+  int offset_a_m = ItemsPerBlockX * blockIdx.x / ItemsPerVector;
   int offset_b_n = ItemsPerBlockX * blockIdx.y;
-  int lda = dim_m / ItemsPerThread;
-  int ldb = dim_k / ItemsPerThread;
-  int a_m = threadIdx.x % ThreadsPerWarpX; // 8
-  int a_k = threadIdx.x / ThreadsPerWarpX; // 8
-  int b_k = 0;
-  int b_n = threadIdx.x;
+  int lda = dim_m / ItemsPerVector;
+  int ldb = dim_k / ItemsPerVector;
+  int a_m = threadIdx.x % VectorsPerMtile; // 16
+  int a_k = threadIdx.x / VectorsPerMtile; // 4
+  int b_k = threadIdx.x % VectorsPerKtile; // 2
+  int b_n = threadIdx.x / VectorsPerKtile; // 32
 
-  struct __align__(16) vec_t { float d[ItemsPerThread]; };
+  struct __align__(16) vec_t { float d[ItemsPerVector]; };
   vec_t *tile_a;
   vec_t *tile_b;
-  vec_t __align__(16) thread_a;
-  vec_t __align__(16) thread_b;
+  vec_t __align__(16) thread_a[VectorsPerThread];
+  vec_t __align__(16) thread_b[VectorsPerThread];
   __shared__ float __align__(16) block_a[Ktile][ItemsPerBlockX];
   __shared__ float __align__(16) block_b[Ktile][ItemsPerBlockX];
   float __align__(16) fragment_a[ItemsPerThread];
   float __align__(16) fragment_b[ItemsPerThread];
   float __align__(16) fragment_c[ItemsPerThread][ItemsPerThread];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * lda) * ItemsPerThread]);
-  tile_b = reinterpret_cast<vec_t*>(&d_b[(b_k + (offset_b_n + b_n) * ldb) * ItemsPerThread]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[(a_k * lda + (a_m + offset_a_m)) * ItemsPerVector]);
+  tile_b = reinterpret_cast<vec_t*>(&d_b[((b_n + offset_b_n) * ldb + b_k) * ItemsPerVector]);
   for (int m = 0; m < ItemsPerThread; ++m)
     for (int n = 0; n < ItemsPerThread; ++n)
       fragment_c[m][n] = 0;
@@ -57,21 +65,27 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += Ktile) {
-    thread_a = tile_a[offset_a_k];
-    thread_b = tile_b[offset_b_k];
-    __syncthreads();
-    for (int j = 0; j < ItemsPerThread; ++j) {
-      block_a[a_k][a_m * ItemsPerThread + j] = thread_a.d[j];
-      block_b[b_k * ItemsPerThread + j][b_n] = thread_b.d[j];
+    for (int i = 0; i < VectorsPerThread; ++i) {
+      thread_a[i] = tile_a[offset_a_k + i * ThreadsPerKtile * lda];
+      thread_b[i] = tile_b[offset_b_k + i * ThreadsPerNtile * ldb];
     }
     __syncthreads();
-    offset_a_k += Ktile * lda;
-    offset_b_k += Ktile / ItemsPerThread;
+    for (int i = 0; i < VectorsPerThread; ++i) {
+      for (int j = 0; j < ItemsPerVector; ++j) {
+	block_a[a_k + i * ThreadsPerKtile][a_m * ItemsPerVector + j] = thread_a[i].d[j];
+	block_b[b_k * ItemsPerVector + j][b_n + i * ThreadsPerNtile] = thread_b[i].d[j];
+      }
+    }
+    __syncthreads();
+    offset_a_k += lda * Ktile;
+    offset_b_k += Ktile / ItemsPerVector;
 #pragma unroll
     for (int k = 0; k < Ktile; k++) {
-      for (int j = 0; j < ItemsPerThread; ++j) {
-	fragment_a[j] = block_a[k][offset_y + lane_y * ItemsPerThread + j];
-	fragment_b[j] = block_b[k][offset_x + lane_x * ItemsPerThread + j];
+      for (int i = 0; i < VectorsPerThread; ++i) {
+	for (int j = 0; j < ItemsPerVector; ++j) {
+	  fragment_a[i * ItemsPerVector + j] = block_a[k][offset_y + (lane_y + i * ThreadsPerWarpY) * ItemsPerVector + j];
+	  fragment_b[i * ItemsPerVector + j] = block_b[k][offset_x + (lane_x + i * ThreadsPerWarpX) * ItemsPerVector + j];
+	}
       }
       for (int m = 0; m < ItemsPerThread; ++m) {
 	for (int n = 0; n < ItemsPerThread; ++n) {
@@ -80,14 +94,18 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
     }
   }
-  for (int j = 0; j < ItemsPerThread; ++j) {
-    int tx = offset_x + lane_x * ItemsPerThread + j;
-    int ty = offset_y + lane_y * ItemsPerThread;
-    int bx = ItemsPerBlockX * blockIdx.y + tx;
-    int by = ItemsPerBlockX * blockIdx.x + ty;
-    for (int i = 0; i < ItemsPerThread; ++i) {
-      if (bx < dim_n && (by + i) < dim_m) {
-	d_c[bx * dim_m + by + i] = fragment_c[i][j];
+  for (int ix = 0; ix < ItemsPerThread; ++ix) {
+    for (int iy = 0; iy < ItemsPerThread; iy += ItemsPerVector) {
+      int vx = ix / ItemsPerVector;
+      int vy = iy / ItemsPerVector;
+      int tx = offset_x + (lane_x + vx * ThreadsPerWarpX) * ItemsPerVector + (ix % ItemsPerVector);
+      int ty = offset_y + (lane_y + vy * ThreadsPerWarpY) * ItemsPerVector + (iy % ItemsPerVector);
+      int bx = ItemsPerBlockX * blockIdx.y + tx;
+      int by = ItemsPerBlockX * blockIdx.x + ty;
+      for (int i = 0; i < ItemsPerVector; ++i) {
+	if (bx < dim_n && (by + i) < dim_m) {
+	  d_c[bx * dim_m + by + i] = fragment_c[iy + i][ix];
+	}
       }
     }
   }
