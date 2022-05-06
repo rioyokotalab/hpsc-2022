@@ -25,20 +25,20 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   float __align__(16) fragment_b[8];
   float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m + a_k * dim_m)]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[offset_a_m + a_m + a_k * dim_m]);
   tile_b = reinterpret_cast<vec_t*>(&d_b[(offset_b_n + b_n) * dim_k]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
       fragment_c[m][n] = 0;
 
-  int warp_id = threadIdx.x / 32; // 2
+  int warp_id = threadIdx.x / 32;
   int warp_x = 0;
   int warp_y = warp_id;
-  int lane_id = threadIdx.x % 32; // 32
-  int lane_x = lane_id / 4; // 8
-  int lane_y = lane_id % 4; // 4
-  int offset_x = warp_x * 64; // 64
-  int offset_y = warp_y * 32; // 32 x 2
+  int lane_id = threadIdx.x % 32;
+  int lane_x = lane_id / 4;
+  int lane_y = lane_id % 4;
+  int offset_x = warp_x * 64 + lane_x * 8;
+  int offset_y = warp_y * 32 + lane_y * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += 8) {
@@ -55,8 +55,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 #pragma unroll
     for (int k = 0; k < 8; k++) {
       for (int j = 0; j < 8; ++j) {
-	fragment_a[j] = block_a[k][offset_y + lane_y * 8 + j];
-	fragment_b[j] = block_b[k][offset_x + lane_x * 8 + j];
+	fragment_a[j] = block_a[k][offset_y + j];
+	fragment_b[j] = block_b[k][offset_x + j];
       }
       for (int m = 0; m < 8; ++m) {
 	for (int n = 0; n < 8; ++n) {
@@ -66,8 +66,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     }
   }
   for (int j = 0; j < 8; ++j) {
-    int tx = offset_x + lane_x * 8 + j;
-    int ty = offset_y + lane_y * 8;
+    int tx = offset_x + j;
+    int ty = offset_y;
     int bx = 64 * blockIdx.y + tx;
     int by = 64 * blockIdx.x + ty;
     for (int i = 0; i < 8; ++i) {
