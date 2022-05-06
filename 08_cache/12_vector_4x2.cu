@@ -34,19 +34,19 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int b_k = threadIdx.x % 2;
   int b_n = threadIdx.x / 2;
 
-  struct __align__(16) vec_t { float d[ItemsPerVector]; };
+  struct __align__(16) vec_t { float d[4]; };
   vec_t *tile_a;
   vec_t *tile_b;
-  vec_t __align__(16) thread_a[VectorsPerThread];
-  vec_t __align__(16) thread_b[VectorsPerThread];
-  __shared__ float __align__(16) block_a[Ktile][ItemsPerBlockX];
-  __shared__ float __align__(16) block_b[Ktile][ItemsPerBlockX];
-  float __align__(16) fragment_a[ItemsPerThread];
-  float __align__(16) fragment_b[ItemsPerThread];
-  float __align__(16) fragment_c[ItemsPerThread][ItemsPerThread];
+  vec_t __align__(16) thread_a[2];
+  vec_t __align__(16) thread_b[2];
+  __shared__ float __align__(16) block_a[8][64];
+  __shared__ float __align__(16) block_b[8][64];
+  float __align__(16) fragment_a[8];
+  float __align__(16) fragment_b[8];
+  float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(a_k * lda + (a_m + offset_a_m)) * ItemsPerVector]);
-  tile_b = reinterpret_cast<vec_t*>(&d_b[((b_n + offset_b_n) * ldb + b_k) * ItemsPerVector]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[(a_k * lda + (a_m + offset_a_m)) * 4]);
+  tile_b = reinterpret_cast<vec_t*>(&d_b[((b_n + offset_b_n) * ldb + b_k) * 4]);
   for (int m = 0; m < ItemsPerThread; ++m)
     for (int n = 0; n < ItemsPerThread; ++n)
       fragment_c[m][n] = 0;
