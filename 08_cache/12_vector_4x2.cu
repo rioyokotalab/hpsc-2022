@@ -9,7 +9,6 @@ using namespace std;
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
   const int ItemsPerVector = 4;
-  const int ItemsPerThread = 8;
 
   int offset_a_m = 64 * blockIdx.x / 4;
   int offset_b_n = 64 * blockIdx.y;
@@ -70,15 +69,15 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 	  fragment_b[i * ItemsPerVector + j] = block_b[k][offset_x + (lane_x + i * 8) * ItemsPerVector + j];
 	}
       }
-      for (int m = 0; m < ItemsPerThread; ++m) {
-	for (int n = 0; n < ItemsPerThread; ++n) {
+      for (int m = 0; m < 8; ++m) {
+	for (int n = 0; n < 8; ++n) {
 	  fragment_c[m][n] += fragment_a[m] * fragment_b[n];
 	}
       }
     }
   }
-  for (int ix = 0; ix < ItemsPerThread; ++ix) {
-    for (int iy = 0; iy < ItemsPerThread; iy += ItemsPerVector) {
+  for (int ix = 0; ix < 8; ++ix) {
+    for (int iy = 0; iy < 8; iy += ItemsPerVector) {
       int vx = ix / ItemsPerVector;
       int vy = iy / ItemsPerVector;
       int tx = offset_x + (lane_x + vx * 8) * ItemsPerVector + (ix % ItemsPerVector);
