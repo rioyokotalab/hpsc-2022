@@ -26,7 +26,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   float __align__(16) fragment_b[8];
   float __align__(16) fragment_c[8][8];
 
-  tile_a = reinterpret_cast<vec_t*>(&d_a[(a_k * dim_m + (a_m + offset_a_m))]);
+  tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (a_m + offset_a_m)]);
   tile_b = reinterpret_cast<vec_t*>(&d_b[(b_n + offset_b_n) * dim_k + b_k]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
@@ -78,11 +78,11 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       int vy = iy / 4;
       int tx = offset_x + (lane_x + vx * 8) * 4 + (ix % 4);
       int ty = offset_y + (lane_y + vy * 4) * 4 + (iy % 4);
-      int bx = 64 * blockIdx.y + tx;
-      int by = 64 * blockIdx.x + ty;
+      int c_n = 64 * blockIdx.y + tx;
+      int c_m = 64 * blockIdx.x + ty;
       for (int i = 0; i < 4; ++i) {
-	if (bx < dim_n && (by + i) < dim_m) {
-	  d_c[bx * dim_m + by + i] = fragment_c[iy + i][ix];
+	if (c_n < dim_n && (c_m + i) < dim_m) {
+	  d_c[c_n * dim_m + c_m + i] = fragment_c[iy + i][ix];
 	}
       }
     }
