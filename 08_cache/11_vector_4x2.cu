@@ -38,7 +38,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_y = warp_id * 32 + lane_y * 4;
   int offset_a_k = 0;
   int offset_b_k = 0;
-  for (int kk = 0; kk < dim_k; kk += 8) {
+  for (int k = 0; k < dim_k; k += 8) {
     for (int i = 0; i < 2; ++i) {
       thread_a[i] = tile_a[offset_a_k + i * dim_m];
       thread_b[i] = tile_b[offset_b_k + i * 8 * dim_k];

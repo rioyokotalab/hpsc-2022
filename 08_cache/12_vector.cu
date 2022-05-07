@@ -36,7 +36,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_y = warp_id * 32 + lane_y * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
-  for (int kk = 0; kk < dim_k; kk += 8) {
+  for (int k = 0; k < dim_k; k += 8) {
     vec_t __align__(16) thread_a = tile_a[offset_a_k];
     vec_t __align__(16) thread_b = tile_b[offset_b_k];
     __syncthreads();
