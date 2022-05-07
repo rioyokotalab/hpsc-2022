@@ -21,8 +21,6 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
   float __align__(16) block_c[8][8];
-  float __align__(16) fragment_a[8];
-  float __align__(16) fragment_b[8];
 
   vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (a_m + offset_a_m)]);
   vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[(b_n + offset_b_n) * dim_k + b_k]);
@@ -54,24 +52,18 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     offset_a_k += dim_m * 2;
     offset_b_k += 2;
 #pragma unroll
-    for (int k = 0; k < 8; k++) {
-      for (int i = 0; i < 2; ++i) {
-	for (int j = 0; j < 4; ++j) {
-	  fragment_a[i * 4 + j] = block_a[k][offset_m + i * 16 + j];
-	  fragment_b[i * 4 + j] = block_b[k][offset_n + i * 32 + j];
-	}
-      }
+    for (int k = 0; k < 8; ++k) {
       for (int m = 0; m < 8; ++m) {
 	for (int n = 0; n < 8; ++n) {
-	  block_c[m][n] += fragment_a[m] * fragment_b[n];
+	  block_c[m][n] += block_a[k][offset_m + m / 4 * 16 + m % 4] * block_b[k][offset_n + n / 4 * 32 + n % 4];
 	}
       }
     }
   }
   for (int n = 0; n < 8; ++n) {
     for (int m = 0; m < 8; ++m) {
-      int c_n = offset_b_n + offset_n + (n / 4) * 32 + (n % 4);
-      int c_m = offset_a_m + offset_m + (m / 4) * 16 + ((m / 4 * 4) % 4);
+      int c_n = offset_b_n + offset_n + n / 4 * 32 + (n % 4);
+      int c_m = offset_a_m + offset_m + m / 4 * 16 + ((m / 4 * 4) % 4);
       if (c_n < dim_n && (c_m + m % 4) < dim_m) {
 	d_c[c_n * dim_m + c_m + m % 4] = block_c[m][n];
       }
