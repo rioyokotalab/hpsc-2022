@@ -28,10 +28,10 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 
   int warp_id = threadIdx.x / 32;
   int lane_id = threadIdx.x % 32;
-  int lane_x = lane_id / 4;
-  int lane_y = lane_id % 4;
-  int offset_x = lane_x * 8;
-  int offset_y = warp_id * 32 + lane_y * 8;
+  int lane_n = lane_id / 4;
+  int lane_m = lane_id % 4;
+  int offset_n = lane_n * 8;
+  int offset_m = warp_id * 32 + lane_m * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int k = 0; k < dim_k; k += 8) {
@@ -49,14 +49,14 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     for (int k = 0; k < 8; ++k) {
       for (int m = 0; m < 8; ++m) {
 	for (int n = 0; n < 8; ++n) {
-	  block_c[m][n] += block_a[k][offset_y + m] * block_b[k][offset_x + n];
+	  block_c[m][n] += block_a[k][offset_m + m] * block_b[k][offset_n + n];
 	}
       }
     }
   }
   for (int j = 0; j < 8; ++j) {
-    int c_n = offset_b_n + offset_x + j;
-    int c_m = offset_a_m + offset_y;
+    int c_n = offset_b_n + offset_n + j;
+    int c_m = offset_a_m + offset_m;
     for (int i = 0; i < 8; ++i) {
       if (c_n < dim_n && (c_m + i) < dim_m) {
 	d_c[c_n * dim_m + c_m + i] = block_c[i][j];

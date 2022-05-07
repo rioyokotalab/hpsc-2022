@@ -70,12 +70,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   }
   for (int ix = 0; ix < 8; ++ix) {
     for (int iy = 0; iy < 8; iy += 4) {
-      int vx = ix / 4;
-      int vy = iy / 4;
-      int tx = offset_x + vx * 32 + (ix % 4);
-      int ty = offset_y + vy * 16 + (iy % 4);
-      int c_n = offset_b_n + tx;
-      int c_m = offset_a_m + ty;
+      int c_n = offset_b_n + offset_x + (ix / 4) * 32 + (ix % 4);
+      int c_m = offset_a_m + offset_y + (iy / 4) * 16 + (iy % 4);
       for (int i = 0; i < 4; ++i) {
 	if (c_n < dim_n && (c_m + i) < dim_m) {
 	  d_c[c_n * dim_m + c_m + i] = block_c[iy + i][ix];
