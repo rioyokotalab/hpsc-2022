@@ -22,7 +22,6 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 
   const int Ktile = 8;
   const int ThreadsPerKtile = 4;
-  const int ThreadsPerNtile = 32;
 
   int offset_a_m = 64 * blockIdx.x / 4;
   int offset_b_n = 64 * blockIdx.y;
@@ -63,13 +62,13 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   for (int kk = 0; kk < dim_k; kk += Ktile) {
     for (int i = 0; i < 2; ++i) {
       thread_a[i] = tile_a[offset_a_k + i * ThreadsPerKtile * lda];
-      thread_b[i] = tile_b[offset_b_k + i * ThreadsPerNtile * ldb];
+      thread_b[i] = tile_b[offset_b_k + i * 32 * ldb];
     }
     __syncthreads();
     for (int i = 0; i < 2; ++i) {
       for (int j = 0; j < ItemsPerVector; ++j) {
 	block_a[a_k + i * ThreadsPerKtile][a_m * ItemsPerVector + j] = thread_a[i].d[j];
-	block_b[b_k * ItemsPerVector + j][b_n + i * ThreadsPerNtile] = thread_b[i].d[j];
+	block_b[b_k * ItemsPerVector + j][b_n + i * 32] = thread_b[i].d[j];
       }
     }
     __syncthreads();
