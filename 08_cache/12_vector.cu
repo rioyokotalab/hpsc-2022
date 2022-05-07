@@ -46,9 +46,9 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     }
     __syncthreads();
     offset_a_k += dim_m;
-    offset_b_k ++;
+    offset_b_k++;
 #pragma unroll
-    for (int k = 0; k < 8; k++) {
+    for (int k = 0; k < 8; ++k) {
       for (int j = 0; j < 8; ++j) {
 	fragment_a[j] = block_a[k][offset_y + j];
 	fragment_b[j] = block_b[k][offset_x + j];
