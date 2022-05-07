@@ -10,16 +10,9 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
   const int ItemsPerVector = 4;
   const int ItemsPerThread = 8;
-
   const int ThreadsPerWarpX = 8;
   const int ThreadsPerWarpY = 4;
-  const int ThreadsPerWarp = 32;
-  const int WarpsPerBlockX = 1;
-
-  const int ItemsPerWarpY = 32;
-  const int ItemsPerWarpX = 64;
   const int ItemsPerBlockX = 64;
-
   const int Ktile = 8;
   const int ThreadsPerKtile = 4;
 
