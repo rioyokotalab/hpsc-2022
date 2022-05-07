@@ -20,15 +20,15 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   vec_t __align__(16) thread_b[2];
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
+  float __align__(16) block_c[8][8];
   float __align__(16) fragment_a[8];
   float __align__(16) fragment_b[8];
-  float __align__(16) fragment_c[8][8];
 
   vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (a_m + offset_a_m)]);
   vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[(b_n + offset_b_n) * dim_k + b_k]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
-      fragment_c[m][n] = 0;
+      block_c[m][n] = 0;
 
   int warp_id = threadIdx.x / 32;
   int lane_id = threadIdx.x % 32;
@@ -63,7 +63,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
       for (int m = 0; m < 8; ++m) {
 	for (int n = 0; n < 8; ++n) {
-	  fragment_c[m][n] += fragment_a[m] * fragment_b[n];
+	  block_c[m][n] += fragment_a[m] * fragment_b[n];
 	}
       }
     }
@@ -78,7 +78,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       int c_m = offset_a_m + ty;
       for (int i = 0; i < 4; ++i) {
 	if (c_n < dim_n && (c_m + i) < dim_m) {
-	  d_c[c_n * dim_m + c_m + i] = fragment_c[iy + i][ix];
+	  d_c[c_n * dim_m + c_m + i] = block_c[iy + i][ix];
 	}
       }
     }
