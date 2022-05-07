@@ -12,8 +12,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_b_n = 64 * blockIdx.y;
   int a_m = threadIdx.x % 8 * 8;
   int a_k = threadIdx.x / 8;
-  int b_n = threadIdx.x;
   int b_k = 0;
+  int b_n = threadIdx.x;
 
   struct __align__(16) vec_t { float d[8]; };
   __shared__ float __align__(16) block_a[8][64];
