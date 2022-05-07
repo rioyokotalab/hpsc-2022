@@ -47,18 +47,18 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 
   tile_a = reinterpret_cast<vec_t*>(&d_a[(a_k * lda + (a_m + offset_a_m)) * 4]);
   tile_b = reinterpret_cast<vec_t*>(&d_b[((b_n + offset_b_n) * ldb + b_k) * 4]);
-  for (int m = 0; m < ItemsPerThread; ++m)
-    for (int n = 0; n < ItemsPerThread; ++n)
+  for (int m = 0; m < 8; ++m)
+    for (int n = 0; n < 8; ++n)
       fragment_c[m][n] = 0;
 
-  int warp_id = threadIdx.x / ThreadsPerWarp; // 2
-  int warp_x = warp_id % WarpsPerBlockX; // 2
-  int warp_y = warp_id / WarpsPerBlockX; // 1
-  int lane_id = threadIdx.x % ThreadsPerWarp; // 32
-  int lane_x = lane_id / ThreadsPerWarpY; // 8
-  int lane_y = lane_id % ThreadsPerWarpY; // 4
-  int offset_x = warp_x * ItemsPerWarpX; // 64
-  int offset_y = warp_y * ItemsPerWarpY; // 32 x 2
+  int warp_id = threadIdx.x / 32;
+  int warp_x = 0;
+  int warp_y = warp_id;
+  int lane_id = threadIdx.x % 32;
+  int lane_x = lane_id / 4;
+  int lane_y = lane_id % 4;
+  int offset_x = warp_x * 64;
+  int offset_y = warp_y * 32;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += Ktile) {
