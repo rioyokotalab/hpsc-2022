@@ -78,8 +78,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       int vy = iy / 4;
       int tx = offset_x + (lane_x + vx * 8) * 4 + (ix % 4);
       int ty = offset_y + (lane_y + vy * 4) * 4 + (iy % 4);
-      int c_n = 64 * blockIdx.y + tx;
-      int c_m = 64 * blockIdx.x + ty;
+      int c_n = offset_b_n + tx;
+      int c_m = offset_a_m + ty;
       for (int i = 0; i < 4; ++i) {
 	if (c_n < dim_n && (c_m + i) < dim_m) {
 	  d_c[c_n * dim_m + c_m + i] = fragment_c[iy + i][ix];
