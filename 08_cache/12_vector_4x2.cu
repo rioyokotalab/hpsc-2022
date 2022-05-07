@@ -12,7 +12,6 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   const int ItemsPerThread = 8;
   const int ThreadsPerWarpX = 8;
   const int ThreadsPerWarpY = 4;
-  const int ItemsPerBlockX = 64;
 
   int offset_a_m = 64 * blockIdx.x / 4;
   int offset_b_n = 64 * blockIdx.y;
@@ -86,8 +85,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       int vy = iy / ItemsPerVector;
       int tx = offset_x + (lane_x + vx * ThreadsPerWarpX) * ItemsPerVector + (ix % ItemsPerVector);
       int ty = offset_y + (lane_y + vy * ThreadsPerWarpY) * ItemsPerVector + (iy % ItemsPerVector);
-      int bx = ItemsPerBlockX * blockIdx.y + tx;
-      int by = ItemsPerBlockX * blockIdx.x + ty;
+      int bx = 64 * blockIdx.y + tx;
+      int by = 64 * blockIdx.x + ty;
       for (int i = 0; i < ItemsPerVector; ++i) {
 	if (bx < dim_n && (by + i) < dim_m) {
 	  d_c[bx * dim_m + by + i] = fragment_c[iy + i][ix];
