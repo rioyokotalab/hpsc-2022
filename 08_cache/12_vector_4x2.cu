@@ -31,13 +31,11 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       fragment_c[m][n] = 0;
 
   int warp_id = threadIdx.x / 32;
-  int warp_x = 0;
-  int warp_y = warp_id;
   int lane_id = threadIdx.x % 32;
   int lane_x = lane_id / 4;
   int lane_y = lane_id % 4;
-  int offset_x = warp_x * 64 + lane_x * 4;
-  int offset_y = warp_y * 32 + lane_y * 4;
+  int offset_x = lane_x * 4;
+  int offset_y = warp_id * 32 + lane_y * 4;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int kk = 0; kk < dim_k; kk += 8) {
