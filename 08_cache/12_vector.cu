@@ -54,12 +54,12 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
     }
   }
-  for (int j = 0; j < 8; ++j) {
-    int c_n = offset_b_n + offset_n + j;
+  for (int n = 0; n < 8; ++n) {
+    int c_n = offset_b_n + offset_n + n;
     int c_m = offset_a_m + offset_m;
-    for (int i = 0; i < 8; ++i) {
-      if (c_n < dim_n && (c_m + i) < dim_m) {
-	d_c[c_n * dim_m + c_m + i] = block_c[i][j];
+    for (int m = 0; m < 8; ++m) {
+      if (c_n < dim_n && (c_m + m) < dim_m) {
+	d_c[c_n * dim_m + c_m + m] = block_c[m][n];
       }
     }
   }
