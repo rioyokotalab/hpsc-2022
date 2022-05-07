@@ -8,8 +8,6 @@ using namespace std;
 
 __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
-  const int ItemsPerVector = 4;
-
   int offset_a_m = 64 * blockIdx.x / 4;
   int offset_b_n = 64 * blockIdx.y;
   int lda = dim_m / 4;
@@ -53,20 +51,20 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     }
     __syncthreads();
     for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < ItemsPerVector; ++j) {
-	block_a[a_k + i * 4][a_m * ItemsPerVector + j] = thread_a[i].d[j];
-	block_b[b_k * ItemsPerVector + j][b_n + i * 32] = thread_b[i].d[j];
+      for (int j = 0; j < 4; ++j) {
+	block_a[a_k + i * 4][a_m * 4 + j] = thread_a[i].d[j];
+	block_b[b_k * 4 + j][b_n + i * 32] = thread_b[i].d[j];
       }
     }
     __syncthreads();
     offset_a_k += lda * 8;
-    offset_b_k += 8 / ItemsPerVector;
+    offset_b_k += 2;
 #pragma unroll
     for (int k = 0; k < 8; k++) {
       for (int i = 0; i < 2; ++i) {
-	for (int j = 0; j < ItemsPerVector; ++j) {
-	  fragment_a[i * ItemsPerVector + j] = block_a[k][offset_y + (lane_y + i * 4) * ItemsPerVector + j];
-	  fragment_b[i * ItemsPerVector + j] = block_b[k][offset_x + (lane_x + i * 8) * ItemsPerVector + j];
+	for (int j = 0; j < 4; ++j) {
+	  fragment_a[i * 4 + j] = block_a[k][offset_y + (lane_y + i * 4) * 4 + j];
+	  fragment_b[i * 4 + j] = block_b[k][offset_x + (lane_x + i * 8) * 4 + j];
 	}
       }
       for (int m = 0; m < 8; ++m) {
@@ -77,14 +75,14 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     }
   }
   for (int ix = 0; ix < 8; ++ix) {
-    for (int iy = 0; iy < 8; iy += ItemsPerVector) {
-      int vx = ix / ItemsPerVector;
-      int vy = iy / ItemsPerVector;
-      int tx = offset_x + (lane_x + vx * 8) * ItemsPerVector + (ix % ItemsPerVector);
-      int ty = offset_y + (lane_y + vy * 4) * ItemsPerVector + (iy % ItemsPerVector);
+    for (int iy = 0; iy < 8; iy += 4) {
+      int vx = ix / 4;
+      int vy = iy / 4;
+      int tx = offset_x + (lane_x + vx * 8) * 4 + (ix % 4);
+      int ty = offset_y + (lane_y + vy * 4) * 4 + (iy % 4);
       int bx = 64 * blockIdx.y + tx;
       int by = 64 * blockIdx.x + ty;
-      for (int i = 0; i < ItemsPerVector; ++i) {
+      for (int i = 0; i < 4; ++i) {
 	if (bx < dim_n && (by + i) < dim_m) {
 	  d_c[bx * dim_m + by + i] = fragment_c[iy + i][ix];
 	}
