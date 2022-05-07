@@ -13,6 +13,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int a_m = threadIdx.x % 8 * 8;
   int a_k = threadIdx.x / 8;
   int b_n = threadIdx.x;
+  int b_k = 0;
 
   struct __align__(16) vec_t { float d[8]; };
   __shared__ float __align__(16) block_a[8][64];
@@ -21,8 +22,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   float __align__(16) fragment_b[8];
   float __align__(16) fragment_c[8][8];
 
-  vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[offset_a_m + a_m + a_k * dim_m]);
-  vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[(offset_b_n + b_n) * dim_k]);
+  vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[(offset_a_m + a_m) + a_k * dim_m]);
+  vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[b_k + (offset_b_n + b_n) * dim_k]);
   for (int m = 0; m < 8; ++m)
     for (int n = 0; n < 8; ++n)
       fragment_c[m][n] = 0;
