@@ -60,8 +60,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
       }
     }
   }
-  for (int n = 0; n < 8; ++n) {
-    for (int m = 0; m < 8; ++m) {
+  for (int m = 0; m < 8; ++m) {
+    for (int n = 0; n < 8; ++n) {
       int c_n = offset_b_n + offset_n + n / 4 * 32 + n % 4;
       int c_m = offset_a_m + offset_m + m / 4 * 16 + m % 4;
       if (c_n < dim_n && c_m < dim_m) {
