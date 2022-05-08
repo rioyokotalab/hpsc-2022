@@ -30,5 +30,7 @@
 	nvcc 14_reg_load.cu -Xcompiler "-O3 -fopenmp" -lcublas
 15_block_8x8: 15_block_8x8.cu
 	nvcc 15_block_8x8.cu -Xcompiler "-O3 -fopenmp" -lcublas
-16_vector: 16_vector.cu
-	nvcc 16_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
+16_shared: 16_shared.cu
+	nvcc 16_shared.cu -Xcompiler "-O3 -fopenmp" -lcublas
+17_vector: 17_vector.cu
+	nvcc 17_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
