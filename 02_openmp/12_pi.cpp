@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <omp.h>
 
 int main() {
   int n = 10;
