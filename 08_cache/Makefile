@@ -11,26 +11,16 @@
 05_sgemm: 05_sgemm.cpp
 	g++ 05_sgemm.cpp -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5
 06_base: 06_base.cu
-	nvcc 06_base.cu -Xcompiler "-O3 -fopenmp"
-07_block: 07_block.cu
-	nvcc 07_block.cu -Xcompiler "-O3 -fopenmp"
-08_grid: 08_grid.cu
-	nvcc 08_grid.cu -Xcompiler "-O3 -fopenmp"
-09_shared: 09_shared.cu
-	nvcc 09_shared.cu -Xcompiler "-O3 -fopenmp"
-10_sgemm: 10_sgemm.cu
-	nvcc 10_sgemm.cu -Xcompiler "-O3 -fopenmp" -lcublas
-11_vector_4x2: 11_vector_4x2.cu
-	nvcc 11_vector_4x2.cu -Xcompiler "-O3 -fopenmp" -lcublas
-12_warp: 12_warp.cu
-	nvcc 12_warp.cu -Xcompiler "-O3 -fopenmp" -lcublas
-13_align: 13_align.cu
-	nvcc 13_align.cu -Xcompiler "-O3 -fopenmp" -lcublas
-14_reg_load: 14_reg_load.cu
-	nvcc 14_reg_load.cu -Xcompiler "-O3 -fopenmp" -lcublas
-15_block_8x8: 15_block_8x8.cu
-	nvcc 15_block_8x8.cu -Xcompiler "-O3 -fopenmp" -lcublas
-16_shared: 16_shared.cu
-	nvcc 16_shared.cu -Xcompiler "-O3 -fopenmp" -lcublas
-17_vector: 17_vector.cu
-	nvcc 17_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
+	nvcc 06_base.cu -Xcompiler "-O3 -fopenmp" -lcublas
+07_shared: 07_shared.cu
+	nvcc 07_shared.cu -Xcompiler "-O3 -fopenmp" -lcublas
+08_block_8x8: 08_block_8x8.cu
+	nvcc 08_block_8x8.cu -Xcompiler "-O3 -fopenmp" -lcublas
+09_reg_load: 09_reg_load.cu
+	nvcc 09_reg_load.cu -Xcompiler "-O3 -fopenmp" -lcublas
+10_align: 10_align.cu
+	nvcc 10_align.cu -Xcompiler "-O3 -fopenmp" -lcublas
+11_warp: 11_warp.cu
+	nvcc 11_warp.cu -Xcompiler "-O3 -fopenmp" -lcublas
+12_vector_4x2: 12_vector_4x2.cu
+	nvcc 12_vector_4x2.cu -Xcompiler "-O3 -fopenmp" -lcublas
