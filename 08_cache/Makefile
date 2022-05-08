@@ -24,5 +24,7 @@
 	nvcc 11_vector_4x2.cu -Xcompiler "-O3 -fopenmp" -lcublas
 12_warp: 12_warp.cu
 	nvcc 12_warp.cu -Xcompiler "-O3 -fopenmp" -lcublas
-13_vector: 13_vector.cu
-	nvcc 13_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
+13_align: 13_align.cu
+	nvcc 13_align.cu -Xcompiler "-O3 -fopenmp" -lcublas
+14_vector: 14_vector.cu
+	nvcc 14_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas

@@ -16,8 +16,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int b_n = threadIdx.x;
 
   struct __align__(16) vec_t { float d[8]; };
-  __shared__ float __align__(16) block_a[8][64];
-  __shared__ float __align__(16) block_b[8][64];
+  __shared__ float block_a[8][64];
+  __shared__ float block_b[8][64];
   float block_c[8][8];
 
   vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (offset_a_m + a_m)]);
@@ -26,12 +26,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     for (int n = 0; n < 8; ++n)
       block_c[m][n] = 0;
 
-  int warp_id = threadIdx.x / 32;
-  int lane_id = threadIdx.x % 32;
-  int lane_n = lane_id / 4;
-  int lane_m = lane_id % 4 + warp_id * 4;
-  int offset_n = lane_n * 8;
-  int offset_m = lane_m * 8;
+  int offset_n = threadIdx.x / 8 * 8;
+  int offset_m = threadIdx.x % 8 * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int k = 0; k < dim_k; k += 8) {

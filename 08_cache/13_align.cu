@@ -18,7 +18,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   struct __align__(16) vec_t { float d[8]; };
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
-  float __align__(16) block_c[8][8];
+  float block_c[8][8];
 
   vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (offset_a_m + a_m)]);
   vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[(offset_b_n + b_n) * dim_k + b_k]);
