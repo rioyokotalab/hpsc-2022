@@ -28,3 +28,5 @@
 	nvcc 13_align.cu -Xcompiler "-O3 -fopenmp" -lcublas
 14_vector: 14_vector.cu
 	nvcc 14_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
+15_vector: 15_vector.cu
+	nvcc 15_vector.cu -Xcompiler "-O3 -fopenmp" -lcublas
