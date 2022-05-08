@@ -36,7 +36,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     __syncthreads();
     for (int j = 0; j < 8; ++j) {
       block_a[a_k][a_m + j] = thread_a.d[j];
-      block_b[j][b_n] = thread_b.d[j];
+      block_b[b_k + j][b_n] = thread_b.d[j];
     }
     __syncthreads();
     offset_a_k += dim_m;
