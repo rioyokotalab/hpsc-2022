@@ -10,10 +10,7 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
 		       float *d_a, float *d_b, float *d_c) {
   int offset_a_m = 64 * blockIdx.x;
   int offset_b_n = 64 * blockIdx.y;
-  int a_m = threadIdx.x % 8 * 8;
-  int a_k = threadIdx.x / 8;
-  int b_k = 0;
-  int b_n = threadIdx.x;
+  int i = threadIdx.x;
 
   __shared__ float block_a[8][64];
   __shared__ float block_b[8][64];
@@ -29,8 +26,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     int offset_a_k = k, offset_b_k = k;
     __syncthreads();
     for (int j = 0; j < 8; ++j) {
-      block_a[a_k][a_m + j] = d_a[(offset_a_k + a_k) * dim_m + offset_a_m + a_m + j];
-      block_b[b_k + j][b_n] = d_b[(offset_b_n + b_n) * dim_k + offset_b_k + b_k + j];
+      block_a[j][i] = d_a[(offset_a_k + j) * dim_m + offset_a_m + i];
+      block_b[j][i] = d_b[(offset_b_n + i) * dim_k + offset_b_k + j];
     }
     __syncthreads();
 #pragma unroll
