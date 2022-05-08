@@ -46,10 +46,10 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
     offset_a_k += dim_m;
     offset_b_k++;
 #pragma unroll
-    for (int k = 0; k < 8; ++k) {
+    for (int j = 0; j < 8; ++j) {
       for (int m = 0; m < 8; ++m) {
 	for (int n = 0; n < 8; ++n) {
-	  block_c[m][n] += block_a[k][offset_m + m] * block_b[k][offset_n + n];
+	  block_c[m][n] += block_a[j][offset_m + m] * block_b[j][offset_n + n];
 	}
       }
     }
