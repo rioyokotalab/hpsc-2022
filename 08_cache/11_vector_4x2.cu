@@ -16,11 +16,11 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int b_n = threadIdx.x / 2;
 
   struct __align__(16) vec_t { float d[4]; };
-  vec_t __align__(16) thread_a[2];
-  vec_t __align__(16) thread_b[2];
   __shared__ float __align__(16) block_a[8][64];
   __shared__ float __align__(16) block_b[8][64];
   float __align__(16) block_c[8][8];
+  vec_t thread_a[2];
+  vec_t thread_b[2];
 
   vec_t *tile_a = reinterpret_cast<vec_t*>(&d_a[a_k * dim_m + (a_m + offset_a_m)]);
   vec_t *tile_b = reinterpret_cast<vec_t*>(&d_b[(b_n + offset_b_n) * dim_k + b_k]);

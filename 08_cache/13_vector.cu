@@ -31,8 +31,8 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int k = 0; k < dim_k; k += 8) {
-    vec_t __align__(16) thread_a = tile_a[offset_a_k];
-    vec_t __align__(16) thread_b = tile_b[offset_b_k];
+    vec_t thread_a = tile_a[offset_a_k];
+    vec_t thread_b = tile_b[offset_b_k];
     __syncthreads();
     for (int j = 0; j < 8; ++j) {
       block_a[a_k][a_m + j] = thread_a.d[j];
