@@ -29,9 +29,9 @@ __global__ void kernel(int dim_m, int dim_n, int dim_k,
   int warp_id = threadIdx.x / 32;
   int lane_id = threadIdx.x % 32;
   int lane_n = lane_id / 4;
-  int lane_m = lane_id % 4;
+  int lane_m = lane_id % 4 + warp_id * 4;
   int offset_n = lane_n * 8;
-  int offset_m = warp_id * 32 + lane_m * 8;
+  int offset_m = lane_m * 8;
   int offset_a_k = 0;
   int offset_b_k = 0;
   for (int k = 0; k < dim_k; k += 8) {
