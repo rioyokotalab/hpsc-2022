@@ -1,3 +1,5 @@
+// Name: ZHANG HAOKE
+// Student ID: 22M31261
 #include <cassert>
 #include <cstdio>
 #include <chrono>
@@ -14,12 +16,18 @@ int main (int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   assert(mpisize == dim[0]*dim[1]);
   hsize_t N[2] = {NX, NY};
+  hsize_t Nlocal_half[2] = {NX/dim[0]/2, NY/dim[1]/2};
   hsize_t Nlocal[2] = {NX/dim[0], NY/dim[1]};
   hsize_t offset[2] = {mpirank / dim[0], mpirank % dim[0]};
-  for(int i=0; i<2; i++) offset[i] *= Nlocal[i];
+  for(int i=0; i<2; i++){
+	  offset[i] *= Nlocal[i];
+  }
   hsize_t count[2] = {1,1};
   hsize_t stride[2] = {1,1};
-  vector<int> buffer(Nlocal[0]*Nlocal[1],mpirank);
+  vector<int> buffer_half(Nlocal_half[0]*Nlocal_half[1],mpirank);
+  vector<int> buffer;
+  for(int i = 0; i < 4; i++) buffer.insert(buffer.end(), buffer_half.begin(), buffer_half.end());
+ 
   hid_t plist = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist, MPI_COMM_WORLD, MPI_INFO_NULL);
   hid_t file = H5Fcreate("data.h5", H5F_ACC_TRUNC, H5P_DEFAULT, plist);
