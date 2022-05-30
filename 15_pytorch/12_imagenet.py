@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms, models
 from torch.nn.parallel import DistributedDataParallel as DDP
 import time
 import os
@@ -13,31 +13,6 @@ def print0(message):
             print(message, flush=True)
     else:
         print(message, flush=True)
-
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1)
-        self.dropout1 = nn.Dropout2d(0.25)
-        self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(774400, 128)
-        self.fc2 = nn.Linear(128, 1000)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.dropout2(x)
-        x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
 
 def train(train_loader,model,criterion,optimizer,epoch,device,world_size):
     model.train()
@@ -50,7 +25,7 @@ def train(train_loader,model,criterion,optimizer,epoch,device,world_size):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        if batch_idx % 200 == 0:
+        if batch_idx % (200 / world_size) == 0:
             print0('Train Epoch: {} [{:>5}/{} ({:.0%})]\tLoss: {:.6f}\t Time:{:.4f}'.format(
                 epoch, batch_idx * len(data) * world_size, len(train_loader.dataset),
                 batch_idx / len(train_loader), loss.data.item(),
@@ -87,16 +62,22 @@ def main():
     epochs = 10
     batch_size = 32
     learning_rate = 1.0e-02
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
 
     train_dataset = datasets.ImageFolder('/mnt/nfs/datasets/ILSVRC2012/train',
                                          transforms.Compose([
                                              transforms.RandomResizedCrop(224),
-                                             transforms.ToTensor()
+                                             transforms.RandomHorizontalFlip(),
+                                             transforms.ToTensor(),
+                                             normalize
                                          ]))
     val_dataset = datasets.ImageFolder('/mnt/nfs/datasets/ILSVRC2012/val',
                                          transforms.Compose([
-                                             transforms.Resize(224),
-                                             transforms.ToTensor()
+                                             transforms.Resize(256),
+                                             transforms.CenterCrop(224),
+                                             transforms.ToTensor(),
+                                             normalize
                                          ]))
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         train_dataset,
@@ -108,7 +89,7 @@ def main():
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                              batch_size=batch_size,
                                              shuffle=False)
-    model = CNN().to(device)
+    model = models.resnet18().to(device)
     model = DDP(model, device_ids=[rank % ngpus])
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
