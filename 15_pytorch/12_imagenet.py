@@ -25,7 +25,7 @@ def train(train_loader,model,criterion,optimizer,epoch,device,world_size):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        if batch_idx % (200 / world_size) == 0:
+        if batch_idx % (64 / world_size) == 0:
             print0('Train Epoch: {} [{:>5}/{} ({:.0%})]\tLoss: {:.6f}\t Time:{:.4f}'.format(
                 epoch, batch_idx * len(data) * world_size, len(train_loader.dataset),
                 batch_idx / len(train_loader), loss.data.item(),
@@ -59,7 +59,7 @@ def main():
     ngpus = torch.cuda.device_count()
     device = torch.device('cuda',rank % ngpus)
 
-    epochs = 10
+    epochs = 100
     batch_size = 32
     learning_rate = 1.0e-02
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
