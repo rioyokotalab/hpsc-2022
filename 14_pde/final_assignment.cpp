@@ -113,11 +113,12 @@ class Zeros {
         float& operator[] (initializer_list<int> idx) {
             size_t offset = 0;
             auto stride = m_strides.begin();
-            #pragma omp simd reduction(+:offset)
+            
+            #pragma acc parallel loop reduction(+:offset)
             for (int i = 0; i < size; i++) {
                 offset += i * *stride;
                 ++ stride;
-            }
+            } // The parallel operation for using OpenACC
             return m_buf[offset];
         }
 }; // The operation for the same utilization like the numpy.zeros function in Python by using Class form of C++
