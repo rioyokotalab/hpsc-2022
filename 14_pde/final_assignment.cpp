@@ -86,6 +86,17 @@ class Zeros {
         {
             m_strides.resize(m_dims.size());
             int stride = 1;
+            
+            // The operation for using SMID to calculate vectors.
+            // for (int i = m_dims.size() - 1; i >= 0; -- i) {
+          //      __m256 dimsvec = _mm256_load_ps(m_dims[i]);
+          //      __m256 mstridesvec = _mm256_load_ps(m_strides[i]);
+          //      __m256 stridesvec = _mm256_load_ps(stride);
+          //      _mm256_store_ps(m_strides[i], stridesvec);
+          //      __m256 mulvec = _mm256_mul_ps(stridesvec, dimsvec);
+          //      _mm256_store_ps(stride, stridesvec);
+            // }
+          
             for (int i = m_dims.size() - 1; i >= 0; -- i) {
                 m_strides[i] = stride;
                 stride *= m_dims[i];
@@ -102,7 +113,8 @@ class Zeros {
         float& operator[] (initializer_list<int> idx) {
             size_t offset = 0;
             auto stride = m_strides.begin();
-            for (auto i: idx) {
+            #pragma omp simd reduction(+:offset)
+            for (int i = 0; i < size; i++) {
                 offset += i * *stride;
                 ++ stride;
             }
@@ -188,6 +200,7 @@ int main(int argc, char** argv) {
             }
         }
     }
+    #pragma omp parallel for private(i)
     for (int i = 0; i < n; i++) {
         p[{n-1, i}] = p[{n-2, i}];
         p[{i, 0}] = p[{i, 1}];
