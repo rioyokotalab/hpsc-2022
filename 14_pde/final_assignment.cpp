@@ -17,6 +17,15 @@
 #include <immintrin.h>
 using namespace std;
 
+// For using CUDA function, first we should change the resource's format from ".cpp" into ".cu"
+// Second we need to define the CUDA function. In the final assignment, I want to use CUDA functions to calculate the "for" loop in "Zeros" class.
+
+// __global__ void calculate(int *m_strides, int *m_dims, int stride){
+//	 int i = blockIdx.x * blockDim.x + threadIdx.x;
+//	 m_strides[i] = stride;
+//	 stride *= m_dims[i];
+// }
+
 template<typename T>
 vector<float> linspace(T start_in, T end_in, int num_in)
 {
@@ -89,13 +98,27 @@ class Zeros {
             
             // The operation for using SMID to calculate vectors.
             // for (int i = m_dims.size() - 1; i >= 0; -- i) {
-          //      __m256 dimsvec = _mm256_load_ps(m_dims[i]);
-          //      __m256 mstridesvec = _mm256_load_ps(m_strides[i]);
-          //      __m256 stridesvec = _mm256_load_ps(stride);
-          //      _mm256_store_ps(m_strides[i], stridesvec);
-          //      __m256 mulvec = _mm256_mul_ps(stridesvec, dimsvec);
-          //      _mm256_store_ps(stride, stridesvec);
+            //      __m256 dimsvec = _mm256_load_ps(m_dims[i]);
+            //      __m256 mstridesvec = _mm256_load_ps(m_strides[i]);
+            //      __m256 stridesvec = _mm256_load_ps(stride);
+            //      _mm256_store_ps(m_strides[i], stridesvec);
+            //      __m256 mulvec = _mm256_mul_ps(stridesvec, dimsvec);
+            //      _mm256_store_ps(stride, stridesvec);
             // }
+          
+            // To use CUDA function defined at the beginning:
+            // int range = m_dims.size();
+            // int *temp_strides, *temp_dims;
+            // cudaMallocManaged(&temp_strides, range*sizeof(int));
+            // cudaMallocManaged(&temp_dims, range*sizeof(int));
+            // for(int i = 0; i < range; i++){
+            //     temp_strides[i] = m_strides[i];
+            //     temp_dims[i] = m_dims[i];    
+            // }
+            // calculate<<<range, n/range>>>(temp_strides, temp_dims, stride);
+            // cudaDeviceSynchronize();
+            // cudaFree(temp_strides);
+            // cudaFree(temp_dims);
           
             for (int i = m_dims.size() - 1; i >= 0; -- i) {
                 m_strides[i] = stride;
