@@ -86,15 +86,15 @@ vector<IntType> range(IntType stop)
 }  // The operation for the same utilization like the numpy.range function in Python by using template form of C++
 
 class Zeros {
-    vector<int> m_dims, m_strides;
+    vector<size_t> m_dims, m_strides;
     unique_ptr<float[]> m_buf;
 
     public:
-        Zeros(vector<int> dims):
+        Zeros(vector<size_t> dims):
             m_dims{move(dims)}
         {
             m_strides.resize(m_dims.size());
-            int stride = 1;
+            size_t stride = 1;
             
             // The operation for using SMID to calculate vectors.
             // for (int i = m_dims.size() - 1; i >= 0; -- i) {
@@ -127,20 +127,15 @@ class Zeros {
             m_buf.reset(new float[stride]);
         }
 
-    Zeros(Zeros&& z);
-    Zeros& operator=(Zeros&& z);
     
-    Zeros(const Zeros& z);
-    Zeros& operator=(const Zeros& z);
-    
-        float& operator[] (initializer_list<int> idx) {
+        float& operator[] (initializer_list<size_t> idx) {
             size_t offset = 0;
             auto stride = m_strides.begin();
             
             #pragma acc parallel loop reduction(+:offset)
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i <  m_dims.size(); i++) {
                 offset += i * *stride;
-                ++ stride;
+                ++stride;
             } // The parallel operation for using OpenACC
             return m_buf[offset];
         }
@@ -154,7 +149,7 @@ int main(int argc, char** argv) {
     // insert code here...
     int nx = 41;
     int ny = 41;
-    const int n = 41;
+    unsigned long n = 41;
     int nt = 500;
     int nit = 50;
     float dx = 2 / (nx - 1);
@@ -162,7 +157,7 @@ int main(int argc, char** argv) {
     float dt = 0.01;
     int rho = 1;
     float nu = 0.02;
-    Zeros X({nx, ny}), Y({nx, ny});
+    Zeros X({n, n}), Y({n, n});
   
     MPI_Init(&argc, &argv);
     int size, rank;
@@ -174,8 +169,8 @@ int main(int argc, char** argv) {
     auto y = linspace(0, 2, ny);
   
     for(int i=0; i<n/size; i++) {
-    jbody[i].x = x[i];
-    jbody[i].y = y[i];
+      jbody[i].x = x[i];
+      jbody[i].y = y[i];
   }
     int recv_from = (rank + 1) % size;
     int send_to = (rank - 1 + size) % size;
@@ -190,53 +185,59 @@ int main(int argc, char** argv) {
     MPI_Put(jbody, N/size, MPI_BODY, send_to, 0, N/size, MPI_BODY, win);
     MPI_Win_fence(0, win);
     for(int i=0; i<N/size; i++) {
+        unsigned long li = static_cast<int>(i);
       for(int j=0; j<N/size; j++) {
-          X[{i, j}] = jbody[j].x;
-          Y[{j, i}] = jbody[j].y;
+          unsigned long lj = static_cast<int>(j);
+          X[{li, lj}] = jbody[j].x;
+          Y[{lj, li}] = jbody[j].y;
       }
     }
   }   // The operation for the same utilization like the numpy.meshgrid function in Python by using MPI.
     
-    Zeros u({ny, nx});
-    Zeros v({ny, nx});
-    Zeros p({ny, nx});
-    Zeros b({ny, nx});
+    Zeros u({n, n});
+    Zeros v({n, n});
+    Zeros p({n, n});
+    Zeros b({n, n});
     
     for (int n : range(nt)) {
+        #pragma omp parallel for private(i) private(j)
         for (int j = 1; j < ny; j++) {
+            unsigned long lj = static_cast<int>(j);
             for (int i = 1; i < nx; i++) {
-                b[{j, i}] = rho * (1 / dt *
-                                   ((u[{j, i+1}] - u[{j, i-1}]) / (2 * dx) + (v[{j+1, i}] - v[{j-1, i}]) / (2 * dy)) -
-                                   pow(((u[{j, i+1}] - u[{j, i-1}]) / (2 * dx)), 2) - 2 * ((u[{j+1, i}] - u[{j-1, i}]) / (2 * dy) *\
-                                                                                      (v[{j, i+1}] - v[{j, i-1}]) / (2 * dx)) - pow(((v[{j+1, i}] - v[{j-1, i}]) / (2 * dy)), 2));
+                unsigned long li = static_cast<int>(i);
+                b[{lj, li}] = rho * (1 / dt * ((u[{lj, li+1}] - u[{lj, li-1}]) / (2 * dx) + (v[{lj+1, li}] - v[{lj-1, li}]) / (2 * dy)) -
+                            pow(((u[{lj, li+1}] - u[{lj, li-1}]) / (2 * dx)), 2) - 2 * ((u[{lj+1, li}] - u[{lj-1, li}]) / (2 * dy) * (v[{lj, li+1}] - v[{lj, li-1}]) / (2 * dx)) - pow(((v[{lj+1, li}] - v[{lj-1, li}]) / (2 * dy)), 2));
             }
         }
     }
     for (int it : range(nit)) {
-        Zeros pn({ny, nx});
-        pn = p;
-        for (int j = 1; j < ny; j++) {
-            for (int i = 1; i < nx; i++) {
-                p[{j, i}] = (pow(dy, 2) * (pn[{j, i+1}] + pn[{j, i-1}]) +
-                             pow(dx, 2) * (pn[{j+1, i}] + pn[{j-1, i}]) -
-                             b[{j, i}] * pow(dx, 2) * pow(dy, 2))
+        Zeros&& pn = move(p);
+        #pragma omp parallel for private(i) private(j)
+        for (int j = 1; j != ny; ++j) {
+            unsigned long lj = static_cast<int>(j);
+            for (int i = 1; i != nx; ++i) {
+                unsigned long li = static_cast<int>(i);
+                p[{lj, li}] = (pow(dy, 2) * (pn[{lj, li+1}] + pn[{lj, li-1}]) +
+                             pow(dx, 2) * (pn[{lj+1, li}] + pn[{lj-1, li}]) -
+                             b[{lj, li}] * pow(dx, 2) * pow(dy, 2))
                 / (2 * (pow(dx, 2) + pow(dy, 2)));
             }
         }
     }
     #pragma omp parallel for private(i)
-    for (int i = 0; i < n; i++) {
+    for (unsigned long i = 0; i < n; i++) {
         p[{n-1, i}] = p[{n-2, i}];
         p[{i, 0}] = p[{i, 1}];
         p[{0, i}] = p[{1, i}];
         p[{i, n-1}] = 0;
     }
-    Zeros un({ny, nx}), vn({ny, nx});
-    un = u;
-    vn = v;
+  
+    Zeros&& un = move(u);
+    Zeros&& vn = move(v);
     
-    for (int j = 1; j < ny; j++) {
-        for (int i = 1; i < nx; i++) {
+    #pragma omp parallel for private(i) private(j)
+    for (unsigned long j = 1; j != n; ++j) {
+        for (unsigned long i = 1; i != n; ++i) {
             u[{j, i}] = un[{j, i}] - un[{j, i}] * dt / dx * (un[{j, i}] - un[{j, i - 1}])
             - un[{j, i}] * dt / dy * (un[{j, i}] - un[{j - 1, i}])
             - dt / (2 * rho * dx) * (p[{j, i+1}] - p[{j, i-1}])
@@ -250,7 +251,7 @@ int main(int argc, char** argv) {
             + nu * dt / pow(dy, 2) * (vn[{j+1, i}] - 2 * vn[{j, i}] + vn[{j-1, i}]);
         }
     }
-  #pragma omp parallel for private(i)
+    #pragma omp parallel for private(i)
     for (int i = 0; i < n; i++) {
         u[{i, 0}] = 0;
         u[{0, i}] = 0;
