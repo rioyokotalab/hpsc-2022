@@ -171,7 +171,7 @@ int main() {
 
   //Two Dimenional allocation of threads
   dim3 threadsPerBlock(N,  N);
-  dim3 blocks(1, 1);
+  dim3 numBlocks(1, 1);
 
   //Meshgrid for contour plot: Start
   vector<float> y(ny);
@@ -209,7 +209,7 @@ int main() {
       cudaDeviceSynchronize();
 
       //Calculates p[i][j]
-      for (int it = 0; i < nit; i++) {
+      for (int it = 0; it < nit; it++) {
           p_pn<<<numBlocks, threadsPerBlock>>>(B, P, PN);
           cudaDeviceSynchronize();
       }
