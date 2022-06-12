@@ -1,3 +1,5 @@
+// Name: ZHANG HAOKE
+// Student ID: 22M31261
 #include <cassert>
 #include <cstdio>
 #include <chrono>
@@ -22,14 +24,23 @@ int main (int argc, char** argv) {
   H5Sget_simple_extent_dims(globalspace, N, NULL);
   hsize_t NX = N[0], NY = N[1];
   hsize_t Nlocal[2] = {NX/dim[0], NY/dim[1]};
+  hsize_t Nlocal_half[2] = {NX/dim[0]/2, NY/dim[1]/2};
   hsize_t offset[2] = {mpirank / dim[0], mpirank % dim[0]};
-  for(int i=0; i<2; i++) offset[i] *= Nlocal[i];
+  hsize_t offset_half[2] = {mpirank / dim[0], mpirank % dim[0]};
+  for(int i=0; i<2; i++){
+    offset[i] *= Nlocal[i];
+    offset_half[i] *= Nlocal_half[i];
+  }
   hsize_t count[2] = {1,1};
   hsize_t stride[2] = {1,1};
   hid_t localspace = H5Screate_simple(2, Nlocal, NULL);
+  hid_t localspace_half = H5Screate_simple(2, Nlocal_half, NULL);
   H5Sselect_hyperslab(globalspace, H5S_SELECT_SET, offset, stride, count, Nlocal);
+  H5Sselect_hyperslab(globalspace, H5S_SELECT_SET, offset_half, stride, count, Nlocal_half);
   H5Pclose(plist);
-  vector<int> buffer(Nlocal[0]*Nlocal[1]);
+  vector<int> buffer_half(Nlocal_half[0]*Nlocal_half[1]);
+  vector<int> buffer;
+  for(int i = 0; i < 4; i++) buffer.insert(buffer.end(), Nlocal_half.begin(), Nlocal_half.end());
   plist = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
   auto tic = chrono::steady_clock::now();
