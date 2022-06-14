@@ -129,7 +129,7 @@ void Zeros_init(float M[ny][nx]) {
 //Host Main
 int main() {
   int n = 0;
-  int N = 50;
+  int N = 25;
   size_t bytes = ny*nx*sizeof(float); //size to allocate for unified memory
 
   //Vector of pressure, p for plotting contour plot
@@ -171,7 +171,7 @@ int main() {
 
   //Two Dimenional allocation of threads
   dim3 threadsPerBlock(N,  N);
-  dim3 numBlocks(1, 1);
+  dim3 numBlocks(2, 2);
 
   //Meshgrid for contour plot: Start
   vector<float> y(ny);
